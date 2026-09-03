@@ -35,9 +35,9 @@ NUM_DAYS = 5
 # Kite-Matrix: (min_kn, max_kn, Label, Farbschluessel)
 # Ausgelegt auf 80 kg Fahrergewicht und ein 9er/12er Quiver.
 KITE_RULES = [
-    (0.0, 13.0, "zu wenig", "muted"),
-    (13.0, 19.0, "12 m", "green"),
-    (19.0, 28.0, "9 m", "blue"),
+    (0.0, 16.0, "zu wenig", "muted"),
+    (16.0, 21.0, "12 m", "green"),
+    (21.0, 28.0, "9 m", "blue"),
     (28.0, 999.0, "zu viel", "red"),
 ]
 
