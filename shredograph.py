@@ -357,7 +357,7 @@ def render(days, now=None):
             d.rectangle([x, baseline - h, x + 12, baseline], fill=color)
     d.line([16, baseline, 784, baseline], fill=BLACK, width=1)
 
-    d.text((16, 476), "Grün 12 m · Blau 9 m · Rot zu viel · Grau zu wenig",
+    d.text((16, 476), "Shredograph by Tzunamy :)",
            font=f_small, fill=BLACK, anchor="ls")
     return img
 
