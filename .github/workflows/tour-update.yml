@@ -18,10 +18,7 @@ permissions:
 jobs:
   render:
     # Nur auf Tagesupdates reagieren, nicht auf jedes Issue
-    if: >-
-      github.event_name != 'issues' ||
-      contains(join(github.event.issue.labels.*.name, ','), 'tour')
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
