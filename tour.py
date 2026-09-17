@@ -16,7 +16,7 @@ import re
 import urllib.parse
 import urllib.request
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # --------------------------------------------------------------------------
 # Konfiguration
@@ -162,7 +162,11 @@ def wetter(lat, lon):
 def lade_foto(url):
     req = urllib.request.Request(url, headers={"User-Agent": "tour-display"})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return Image.open(io.BytesIO(r.read())).convert("RGB")
+        img = Image.open(io.BytesIO(r.read()))
+    # Handys speichern das Bild oft gedreht und legen die richtige Lage nur als
+    # Vermerk daneben. Ohne diese Zeile steht das Foto auf dem Kopf.
+    img = ImageOps.exif_transpose(img)
+    return img.convert("RGB")
 
 
 def stand_lesen():
