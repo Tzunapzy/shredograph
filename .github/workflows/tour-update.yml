@@ -17,8 +17,7 @@ permissions:
 
 jobs:
   render:
-    # Nur auf Tagesupdates reagieren, nicht auf jedes Issue
-        runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
