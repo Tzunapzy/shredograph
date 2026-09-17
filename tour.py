@@ -22,10 +22,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 # Konfiguration
 # --------------------------------------------------------------------------
 
-TOUR_NAME = "Picos de Europa"
+TOUR_NAME = "Jakobsweg"
 START_ORT = "Bilbao"
 ZIEL_ORT = "Santiago"
-TOUR_START = dt.date(2026, 9, 30)      # erster Tag der Tour
+TOUR_START = dt.date(2026, 9, 19)      # erster Fahrtag, nicht der Anreisetag
 TOUR_TAGE = 10
 STAND_DATEI = "tour_stand.json"        # merkt sich Gesamt-km zwischen den Tagen
 LETZTES_DATEI = "letztes_update.json"  # damit das Bild auch ohne neue Nachricht
@@ -110,6 +110,7 @@ def parse_issue(body):
         "hm": hole("höhenmeter", "hoehenmeter"),
         "morgen": hole("morgen geht"),
         "wann": hole("wann").lower(),
+        "drehen": hole("drehen").lower(),
         "foto_url": treffer[0] if treffer else None,
     }
 
@@ -301,9 +302,14 @@ def render(daten):
         d.ellipse([43, 26, 59, 42], outline=GRUEN, width=3)
         d.line([27, 34, 39, 22, 48, 34], fill=GRUEN, width=3, joint="curve")
         d.line([35, 22, 43, 22], fill=GRUEN, width=3)
-        d.text((72, 36), "TAG %d VON %d" % (tag, TOUR_TAGE), font=f_tag,
-               fill=BLACK, anchor="ls")
-        d.text((284, 36), TOUR_NAME, font=f_tour, fill=GRAU, anchor="ls")
+        if tag > TOUR_TAGE:
+            titel, titelfarbe = "ZIEL ERREICHT", GRUEN
+        else:
+            titel, titelfarbe = "TAG %d VON %d" % (tag, TOUR_TAGE), BLACK
+        d.text((72, 36), titel, font=f_tag, fill=titelfarbe, anchor="ls")
+        # Tourname hinter den Titel setzen, egal wie lang der gerade ist
+        d.text((72 + d.textlength(titel, font=f_tag) + 24, 36), TOUR_NAME,
+               font=f_tour, fill=GRAU, anchor="ls")
     d.text((784, 24), "%s, %d. %s" % (WOCHENTAGE[heute.weekday()], heute.day,
                                       MONATE[heute.month - 1]),
            font=f_meta, fill=GRAU, anchor="rs")
@@ -362,11 +368,16 @@ def render(daten):
 
     if morgens:
         d.text((408, 358), "TOUR", font=f_label, fill=GRAU, anchor="ls")
-        d.text((408, 388), "Tag %d" % tag, font=f_zahl, fill=BLACK, anchor="ls")
-        d.text((408 + d.textlength("Tag %d" % tag, font=f_zahl) + 10, 388),
-               "von %d" % TOUR_TAGE, font=f_klein, fill=GRAU, anchor="ls")
-        d.text((408, 408), "%d Tage noch" % max(0, TOUR_TAGE - tag),
-               font=f_klein, fill=GRAU, anchor="ls")
+        if tag > TOUR_TAGE:
+            d.text((408, 388), "geschafft", font=f_mittel, fill=GRUEN, anchor="ls")
+            d.text((408, 408), "%d Tage unterwegs" % TOUR_TAGE,
+                   font=f_klein, fill=GRAU, anchor="ls")
+        else:
+            d.text((408, 388), "Tag %d" % tag, font=f_zahl, fill=BLACK, anchor="ls")
+            d.text((408 + d.textlength("Tag %d" % tag, font=f_zahl) + 10, 388),
+                   "von %d" % TOUR_TAGE, font=f_klein, fill=GRAU, anchor="ls")
+            d.text((408, 408), "%d Tage noch" % max(0, TOUR_TAGE - tag),
+                   font=f_klein, fill=GRAU, anchor="ls")
 
         d.text((644, 358), "BISHER GESAMT", font=f_label, fill=GRAU, anchor="ls")
         d.text((644, 388), "%d" % daten["km_gesamt"], font=f_zahl, fill=BLACK, anchor="ls")
@@ -402,8 +413,13 @@ def render(daten):
     d.ellipse([16 + breite - 11, 434, 16 + breite + 11, 456], fill=ROT)
     d.text((16, 474), START_ORT, font=f_klein, fill=GRUEN, anchor="ls")
     rest = max(0, TOUR_TAGE - tag)
-    d.text((784, 474), "%s · noch %d Tage" % (ZIEL_ORT, rest),
-           font=f_klein, fill=GRAU, anchor="rs")
+    if tag > TOUR_TAGE:
+        fuss, fussfarbe = "%s · angekommen" % ZIEL_ORT, GRUEN
+    elif rest == 0:
+        fuss, fussfarbe = "%s · heute letzte Etappe" % ZIEL_ORT, GRUEN
+    else:
+        fuss, fussfarbe = "%s · noch %d Tage" % (ZIEL_ORT, rest), GRAU
+    d.text((784, 474), fuss, font=f_klein, fill=fussfarbe, anchor="rs")
     return img
 
 
@@ -467,6 +483,14 @@ def aus_issue():
         try:
             foto = lade_foto(f["foto_url"])
             print("Foto geladen: %dx%d" % foto.size)
+            # GitHub entfernt beim Hochladen die Metadaten, deshalb kann der
+            # Drehvermerk fehlen. Dann dreht dieses Feld von Hand.
+            grad = {"180": 180, "rechts": 270, "links": 90}
+            for schluessel, winkel in grad.items():
+                if schluessel in f["drehen"]:
+                    foto = foto.rotate(winkel, expand=True)
+                    print("Foto um %d Grad gedreht" % winkel)
+                    break
         except Exception as e:
             print("Foto konnte NICHT geladen werden: %s: %s" % (type(e).__name__, e))
             foto = None
