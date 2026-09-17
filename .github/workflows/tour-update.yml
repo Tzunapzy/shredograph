@@ -1,0 +1,79 @@
+name: Tour-Update ans Display
+
+on:
+  issues:
+    types: [opened]
+  schedule:
+    # Kurz vor den Weckzeiten des Displays (04:45 / 15:00 UTC = 06:45 / 17:00
+    # Sommerzeit). Diese Laeufe bauen das letzte Update mit frischem Wetter und
+    # aktualisiertem Altersstempel neu - auch wenn du nichts geschrieben hast.
+    - cron: "45 4 * * *"
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  render:
+    # Nur auf Tagesupdates reagieren, nicht auf jedes Issue
+    if: >-
+      github.event_name != 'issues' ||
+      contains(join(github.event.issue.labels.*.name, ','), 'tour')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pillow installieren
+        run: pip install pillow
+
+      - name: Schriften laden
+        run: |
+          mkdir -p fonts
+          curl -sfL -o "fonts/SpaceGrotesk[wght].ttf" \
+            "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf"
+          curl -sfL -o "fonts/Caveat[wght].ttf" \
+            "https://raw.githubusercontent.com/google/fonts/main/ofl/caveat/Caveat%5Bwght%5D.ttf"
+
+      - name: Bisherigen Stand und letztes Update holen
+        run: |
+          git fetch origin output --depth=1 || true
+          git show origin/output:tour_stand.json > tour_stand.json 2>/dev/null || true
+          git show origin/output:letztes_update.json > letztes_update.json 2>/dev/null || true
+          git show origin/output:letztes_foto.png > letztes_foto.png 2>/dev/null || true
+          # Leere Platzhalter wieder entfernen, sonst stolpert das Skript darueber
+          for f in tour_stand.json letztes_update.json letztes_foto.png; do
+            [ -s "$f" ] || rm -f "$f"
+          done
+
+      - name: Bild bauen
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: python3 tour.py --out build
+
+      - name: Auf den output-Branch schieben
+        run: |
+          cp build/shredograph.png .
+          git config user.name "tour-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git checkout --orphan output-tmp
+          git rm -rf --cached . >/dev/null
+          git add -f shredograph.png tour_stand.json letztes_update.json
+          [ -f letztes_foto.png ] && git add -f letztes_foto.png || true
+          git commit -m "Tagesupdate $(date -u +%Y-%m-%dT%H:%MZ)"
+          git branch -M output-tmp output
+          git push -f origin output
+
+      - name: Issue schliessen
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "Ist unterwegs zum Display. Beim naechsten Aufwachen wird es angezeigt."
+          gh issue close ${{ github.event.issue.number }}
