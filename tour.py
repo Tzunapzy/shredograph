@@ -22,11 +22,11 @@ from PIL import Image, ImageDraw, ImageFont
 # Konfiguration
 # --------------------------------------------------------------------------
 
-TOUR_NAME = "Camino Francés"
+TOUR_NAME = "Picos de Europa"
 START_ORT = "Bilbao"
 ZIEL_ORT = "Santiago"
-TOUR_START = dt.date(2026, 9, 18)      # erster Tag der Tour
-TOUR_TAGE = 12
+TOUR_START = dt.date(2026, 9, 30)      # erster Tag der Tour
+TOUR_TAGE = 10
 STAND_DATEI = "tour_stand.json"        # merkt sich Gesamt-km zwischen den Tagen
 LETZTES_DATEI = "letztes_update.json"  # damit das Bild auch ohne neue Nachricht
 FOTO_DATEI = "letztes_foto.png"        # neu gebaut werden kann (Altersstempel)
@@ -88,8 +88,20 @@ def parse_issue(body):
                         return text
         return ""
 
-    # Angehaengte Bilder stehen als Markdown irgendwo im Text
+    # Angehaengte Bilder koennen als Markdown, als HTML-Tag oder als nackte
+    # Adresse im Text stehen - je nachdem, ob App oder Browser benutzt wurde.
     treffer = re.findall(r"!\[[^\]]*\]\((https?://[^)\s]+)\)", body)
+    treffer += re.findall(r"<img[^>]+src=[\"'](https?://[^\"']+)", body)
+    treffer += re.findall(r"(https?://(?:github\.com/user-attachments|[^\s]*githubusercontent)[^\s)\]]+)", body)
+    gesehen, sauber = set(), []
+    for t in treffer:
+        if t not in gesehen:
+            gesehen.add(t)
+            sauber.append(t)
+    treffer = sauber
+    print("Gefundene Bildadressen:", len(treffer))
+    for t in treffer:
+        print("  ", t[:110])
 
     return {
         "nachricht": hole("nachricht"),
@@ -450,8 +462,12 @@ def aus_issue():
     if f["foto_url"]:
         try:
             foto = lade_foto(f["foto_url"])
-        except Exception:
+            print("Foto geladen: %dx%d" % foto.size)
+        except Exception as e:
+            print("Foto konnte NICHT geladen werden: %s: %s" % (type(e).__name__, e))
             foto = None
+    else:
+        print("Keine Bildadresse im Formular gefunden.")
 
     # Vor 12 Uhr ist es die Morgenvariante - im Formular uebersteuerbar
     if "abend" in f["wann"]:
