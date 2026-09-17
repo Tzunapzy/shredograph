@@ -22,11 +22,11 @@ from PIL import Image, ImageDraw, ImageFont
 # Konfiguration
 # --------------------------------------------------------------------------
 
-TOUR_NAME = "Picos de Europa"
+TOUR_NAME = "Camino Francés"
 START_ORT = "Bilbao"
 ZIEL_ORT = "Santiago"
-TOUR_START = dt.date(2026, 9, 30)      # erster Tag der Tour
-TOUR_TAGE = 10
+TOUR_START = dt.date(2026, 9, 18)      # erster Tag der Tour
+TOUR_TAGE = 12
 STAND_DATEI = "tour_stand.json"        # merkt sich Gesamt-km zwischen den Tagen
 LETZTES_DATEI = "letztes_update.json"  # damit das Bild auch ohne neue Nachricht
 FOTO_DATEI = "letztes_foto.png"        # neu gebaut werden kann (Altersstempel)
