@@ -59,8 +59,11 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
           git checkout --orphan output-tmp
           git rm -rf --cached . >/dev/null
-          git add -f shredograph.png tour_stand.json letztes_update.json
-          [ -f letztes_foto.png ] && git add -f letztes_foto.png || true
+          # Nur anlegen, was es wirklich gibt - tour_stand.json entsteht erst
+          # mit der ersten Abendnachricht, ein Foto ist optional.
+          for f in shredograph.png tour_stand.json letztes_update.json letztes_foto.png; do
+            [ -f "$f" ] && git add -f "$f"
+          done
           git commit -m "Tagesupdate $(date -u +%Y-%m-%dT%H:%MZ)"
           git branch -M output-tmp output
           git push -f origin output
