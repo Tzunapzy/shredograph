@@ -1,0 +1,57 @@
+name: Tagesupdate
+description: Nachricht und Foto von der Tour ans Display zu Hause schicken
+title: "Tagesupdate"
+labels: ["tour"]
+body:
+  - type: dropdown
+    id: wann
+    attributes:
+      label: Wann ist das?
+      description: Ohne Auswahl entscheidet die Uhrzeit - vor 12 Uhr Morgen, danach Abend
+      options:
+        - Automatisch
+        - Morgen
+        - Abend
+
+  - type: textarea
+    id: nachricht
+    attributes:
+      label: Nachricht nach Hause
+      placeholder: Wie war der Tag?
+    validations:
+      required: true
+
+  - type: input
+    id: ort
+    attributes:
+      label: Wo bist du?
+      description: Ortsname reicht, das Wetter wird automatisch dazugeholt
+      placeholder: Potes
+    validations:
+      required: true
+
+  - type: input
+    id: km
+    attributes:
+      label: Kilometer heute
+      description: Nur abends nötig, morgens bleibt das Feld leer
+      placeholder: "78"
+
+  - type: input
+    id: hm
+    attributes:
+      label: Höhenmeter heute
+      placeholder: "1450"
+
+  - type: input
+    id: morgen
+    attributes:
+      label: Morgen geht es nach
+      description: Nur abends nötig
+      placeholder: Fuente Dé
+
+  - type: textarea
+    id: foto
+    attributes:
+      label: Foto des Tages
+      description: Bild hier hineinziehen oder über das Büroklammer-Symbol anhängen
