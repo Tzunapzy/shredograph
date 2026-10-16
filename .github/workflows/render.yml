@@ -1,36 +1,39 @@
 name: Shredograph rendern
- 
+
 on:
   schedule:
-    # Zeiten sind UTC. 04/10/16 UTC entspricht 06/12/18 Uhr deutscher Sommerzeit.
-    - cron: "5 4,10,16 * * *"
+    # Rund 30 Minuten vor den Weckzeiten des Displays (07:20 und 17:30 Ortszeit).
+    # Beide Stundenpaare abdecken, weil UTC keine Sommerzeit kennt: im Sommer
+    # greifen 04:50 und 15:00, im Winter 05:50 und 16:00. Die jeweils anderen
+    # beiden Laeufe erzeugen einfach ein zusaetzliches Bild - das stoert nicht.
+    - cron: "50 3,4,14,15 * * *"
   workflow_dispatch:        # erlaubt manuelles Ausloesen ueber den Actions-Reiter
- 
+
 permissions:
   contents: write
- 
+
 jobs:
   render:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
- 
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
- 
+
       - name: Pillow installieren
         run: pip install pillow
- 
+
       - name: Schrift laden
         run: |
           mkdir -p fonts
           curl -sfL -o "fonts/SpaceGrotesk[wght].ttf" \
             "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf"
- 
+
       - name: Bild rendern
         run: python3 shredograph.py --out build
- 
+
       - name: Auf den output-Branch schieben
         run: |
           git config user.name "shredograph-bot"
@@ -43,4 +46,3 @@ jobs:
           git commit -m "Vorhersage $(date -u +%Y-%m-%dT%H:%MZ)"
           git branch -M output-tmp output
           git push -f origin output
- 
